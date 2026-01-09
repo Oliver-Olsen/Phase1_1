@@ -9,13 +9,14 @@
 #include <driver/gpio.h>
 #include <esp_adc/adc_oneshot.h>
 
-#define RGB_RED 2
-#define RGB_GREEN 1
-#define RGB_BLUE 0
+#define RGB_RED GPIO_NUM_2
+#define RGB_GREEN GPIO_NUM_1
+#define RGB_BLUE GPIO_NUM_0
 
-#define MODE_LED 9
-#define BUTTON_PIN 5
-#define photoresistor 3
+#define MODE_LED GPIO_NUM_9
+#define BUTTON_PIN GPIO_NUM_5
+#define photoresistor GPIO_NUM_3
+#define delay(x) vTaskDelay(pdMS_TO_TICKS(x))
 
 #define HIGH 1
 #define LOW 0
@@ -26,8 +27,6 @@
 
 #define FIRST   1
 #define SECOND  2
-
-
 
 int firstButtonPress = 0;
 int secondButtonPress = 0;
@@ -52,7 +51,7 @@ int next_color = 0;
 void modeShift();
 void initSensors();
 void startUp();
-void minitoring();
+void monitoring();
 bool getButtonState();
 void measureLight();
 void measureHum();
@@ -64,7 +63,7 @@ void app_main() {
     startUp();
     while (true)
     {
-        minitoring();
+        monitoring();
     }
 
 }
@@ -73,7 +72,7 @@ void initSensors()
 {
     // Output
     gpio_config_t io_conf_outs = {
-        .pin_bit_mask = (1ULL << RGB_RED) + (1ULL << RGB_GREEN) + (1ULL << RGB_BLUE) + (1ULL << MODE_LED),
+        .pin_bit_mask = (1ULL << RGB_RED) | (1ULL << RGB_GREEN) | (1ULL << RGB_BLUE) | (1ULL << MODE_LED),
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -117,17 +116,17 @@ void initSensors()
 
 
   // Turn off LEDs
-    gpio_set_level(MODE_LED, 0);
-    gpio_set_level(RGB_RED, 0);
-    gpio_set_level(RGB_GREEN, 0);
-    gpio_set_level(RGB_BLUE, 0);
+    gpio_set_level(MODE_LED, LOW);
+    gpio_set_level(RGB_RED, LOW);
+    gpio_set_level(RGB_GREEN, LOW);
+    gpio_set_level(RGB_BLUE, LOW);
 
   // 1. Mode LED
     for (int i=0; i<3; i++) {
         gpio_set_level(MODE_LED, 1);
-        vTaskDelay(pdMS_TO_TICKS(500));
+        delay(500);
         gpio_set_level(MODE_LED, 0);
-        vTaskDelay(pdMS_TO_TICKS(500));
+        delay(500);
     }
 
   // 2. RGB LED colors
@@ -137,7 +136,7 @@ void initSensors()
     gpio_set_level(RGB_BLUE, !colors[next_color][2]);
 
     next_color += 1;
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    delay(1000);
   }
 
 }
@@ -154,20 +153,42 @@ void startUp()
 
     button_pressed = gpio_get_level(BUTTON_PIN);
     printf("%d", button_pressed);
+
     if ((button_pressed == 1) && (firstButtonPress == 0)) {
-        int lowerBoundLDR = adc_oneshot_read(adc_handle, ADC_CHANNEL_3, &LDR_RAW);
-        printf("Upper LDR bound: %d \n", pot_mapped);
+        adc_oneshot_read(adc_handle, ADC_CHANNEL_3, &LDR_RAW);
+        int pot_mapped = LDR_RAW << 1;
+        upper_bound = pot_mapped;
+        printf("Upper LDR bound: %d \n", upper_bound);
         firstButtonPress = 1;
-        vTaskDelay(pdMS_TO_TICKS(3000));
-        printf("Cover sensor completely, and press button again \n");
-        vTaskDelay(pdMS_TO_TICKS(3000));
+        delay(2000);
+
+        printf("Cover sensor head completely, and press button again in: \n");
+        delay(500);
+
+        for (int i=3; i >= 1; i--) {
+          printf("%d..", i);
+          fflush(stdout);
+          delay(1000);
+        }
+
+        printf("\nYou can press the button again now.");
+        while (gpio_get_level(BUTTON_PIN) == 1) {
+            delay(10);
+        }
+
+        delay(50); 
     }
-    if ((button_pressed == HIGH) && (secondButtonPress == 0)) {
-        int upperBoundLDR = adc_oneshot_read(adc_handle, ADC_CHANNEL_3, &LDR_RAW);
-        printf("Release finger from LDR \n lower LDR bound: %d \n", pot_mapped);
+
+    else if ((button_pressed == 1) && (firstButtonPress == 1) && (secondButtonPress == 0)) {
+        adc_oneshot_read(adc_handle, ADC_CHANNEL_3, &LDR_RAW);
+        int pot_mapped = LDR_RAW << 1;
+        lower_bound = pot_mapped;
+
+        printf("\nRelease finger from the LDR \nLower LDR bound: %d \n", lower_bound);
         secondButtonPress = 1;
     }
-    vTaskDelay(pdMS_TO_TICKS(100));
+
+    delay(100);
 
 
 }
