@@ -21,7 +21,7 @@
 adc_oneshot_unit_handle_t adc_handle;
 int upper_bound = 0;
 int lower_bound = 0;
-int current_mode = 1; // 1: Light Mode, 2: Temp mode 3:Hum mode
+uint8_t current_mode = 0; // 0 for the first button press, so user triggers modeselect. 1: Light Mode, 2: Temp mode 3:Hum mode
 
 // RGB Color Map:
 int colors[6][3] = {
