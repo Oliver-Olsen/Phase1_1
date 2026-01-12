@@ -108,13 +108,6 @@ void initSensors()
     adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_3, &adc_channel_config);
 
 
-
-
-
-
-
-
-
   // Turn off LEDs
     gpio_set_level(MODE_LED, LOW);
     gpio_set_level(RGB_RED, LOW);
