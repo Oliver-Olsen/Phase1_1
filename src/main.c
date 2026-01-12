@@ -52,6 +52,9 @@ void set_rgb(int index) {
 void initGPIO_ADC();
 void startup();
 void monitoring();
+void lightMode();
+void tempMode();
+void humMode();
 
 
 
@@ -155,27 +158,15 @@ void monitoring()
         switch (current_mode)
         {
         case LIGHT:
-
-            int val;
-            adc_oneshot_read(adc_handle, PHOTO_CHAN, &val);
-            printf("Light Intensity: %d\n", val);
-
-            // Map 6 colors based on calibration
-            int colorIdx = (val - lower_bound) * 5 / (upper_bound - lower_bound);
-            if (colorIdx < 0) {
-                colorIdx = 0;
-            }
-            if (colorIdx > 5) {
-                colorIdx = 5;
-            }
-            set_rgb(colorIdx);
-            delay(1000);
+            lightMode();
             break;
 
         case TEMP:
+            tempMode();
             break;
 
         case HUM:
+            humMode();
             break;
 
         default:
@@ -183,4 +174,34 @@ void monitoring()
             break;
         }
     }
+}
+
+
+void lightMode()
+{
+    int val;
+    adc_oneshot_read(adc_handle, PHOTO_CHAN, &val);
+    printf("Light Intensity: %d\n", val);
+
+    // Map 6 colors based on calibration
+    int colorIdx = (val - lower_bound) * 5 / (upper_bound - lower_bound);
+    if (colorIdx < 0) {
+        colorIdx = 0;
+    }
+    if (colorIdx > 5) {
+        colorIdx = 5;
+    }
+    set_rgb(colorIdx);
+    delay(1000);
+}
+
+
+void tempMode()
+{
+
+}
+
+void humMode()
+{
+
 }
