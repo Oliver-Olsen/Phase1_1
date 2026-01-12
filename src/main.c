@@ -274,26 +274,43 @@ void tempMode()
         printf("Sensor calibrating, wait for a bit: Error code %d\n", ret);
       }
 
-    delay(1000); // Read every 1 second
 
-    uint8_t val;
-    if (lowTemp < 22)
-    {
-        lowTemp = 22;
-    }
-
-    if (highTemp > 28)
-    {
-        highTemp = 28;
-    }
-    // Map 6 colors based on calibration
-    int colorIdx = (val - lowTemp) * 5 / (highTemp - lowTemp);
-    if (colorIdx < 0) {
-        colorIdx = 0;
-    }
-    if (colorIdx > 5) {
-        colorIdx = 5;
-    }
-    set_rgb(colorIdx);
     delay(1000);
+    uint8_t colorIdx = 0;
+
+    switch (temperature)
+    {
+        case 0:
+        colorIdx = temperature - 23;
+        set_rgb(colorIdx);
+        break;
+
+        case 1:
+        colorIdx = temperature - 24;
+        set_rgb(colorIdx);
+        break;
+
+        case 2:
+        colorIdx = temperature - 25;
+        set_rgb(colorIdx);
+        break;
+
+        case 3:
+        colorIdx = temperature - 26;
+        set_rgb(colorIdx);
+        break;
+
+        case 4:
+        colorIdx = temperature - 27;
+        set_rgb(colorIdx);
+        break;
+
+        case 5:
+        colorIdx = temperature - 28;
+        set_rgb(colorIdx);
+        break;
+
+        default:
+            break;
+    }
 }
