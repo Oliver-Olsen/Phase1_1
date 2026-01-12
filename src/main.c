@@ -1,17 +1,17 @@
 #include <stdio.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "driver/gpio.h"
-#include "driver/i2c.h"
-#include "esp_adc/adc_oneshot.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <driver/gpio.h>
+#include <driver/i2c.h>
+#include <esp_adc/adc_oneshot.h>
 
 // --- Hardware Pins
 #define RGB_RED      GPIO_NUM_0
-#define RGB_GREEN    GPIO_NUM_1
-#define RGB_BLUE     GPIO_NUM_2
-#define MODE_LED     GPIO_NUM_19
-#define BUTTON_PIN   GPIO_NUM_5
-#define PHOTO_CHAN   ADC_CHANNEL_4
+#define RGB_GREEN    GPlIO_NUM_1
+#define RGB_BLUE     GPlIO_NUM_2
+#define MODE_LED     GPlIO_NUM_19
+#define BUTTON_PIN   GPlIO_NUM_5
+#define PHOTO_CHAN   ADlC_CHANNEL_4
 
 #define LIGHT   0
 #define TEMP    1
@@ -31,18 +31,8 @@ int upper_bound = 0;
 int lower_bound = 0;
 uint8_t current_mode = 0; // 0 for the first button press, so user triggers modeselect. 1: Light Mode, 2: Temp mode 3:Hum mode
 
-// RGB Color Map:
-int StartUpColors[6][3] = {
-    {1,0,1},
-    {0,0,1},
-    {0,1,1},
-    {0,1,0},
-    {1,1,0},
-    {1,0,0}
-};
-
 // RGB Color Map: Red to Green Linear Transition
-int LightIntenseColors[6][3] = {
+int Colors[6][3] = {
     {1, 0, 0}, // Step 1: Full Red
     {1, 0, 0}, // Step 2: Red
     {1, 1, 0}, // Step 3: Yellow (Red + Green)
@@ -59,9 +49,9 @@ void set_rgb(int index) {
         gpio_set_level(RGB_BLUE, HIGH);
         return;
     }
-    gpio_set_level(RGB_RED, StartUpColors[index][0]);
-    gpio_set_level(RGB_GREEN, StartUpColors[index][1]);
-    gpio_set_level(RGB_BLUE, StartUpColors[index][2]);
+    gpio_set_level(RGB_RED, Colors[index][0]);
+    gpio_set_level(RGB_GREEN, Colors[index][1]);
+    gpio_set_level(RGB_BLUE, Colors[index][2]);
 }
 
 
@@ -206,6 +196,7 @@ void monitoring()
 
 void lightMode()
 {
+    gpio_set_level(MODE_LED, HIGH);
     int val;
     adc_oneshot_read(adc_handle, PHOTO_CHAN, &val);
     printf("Light Intensity: %d\n", val);
@@ -225,6 +216,7 @@ void lightMode()
 
 void tempMode()
 {
+    gpio_set_level(MODE_LED, LOW);
  // Step 1: Wake up sensor
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
@@ -275,9 +267,9 @@ void tempMode()
       
       printf("Humidity: %.1f%%, Temperature: %.1f C\n", 
              humidity / 10.0, temperature / 10.0);
-    } else {
-      printf("Sensor calibrating, wait for a bit: Error code %d\n", ret);
-    }
+      } else {
+        printf("Sensor calibrating, wait for a bit: Error code %d\n", ret);
+      }
 
-    delay(2000); // Read every 2 seconds
+    delay(1000); // Read every 1 second
 }
