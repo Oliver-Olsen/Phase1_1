@@ -2,20 +2,28 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "driver/i2c.h"
 #include "esp_adc/adc_oneshot.h"
 
 // --- Hardware Pins
 #define RGB_RED      GPIO_NUM_0
 #define RGB_GREEN    GPIO_NUM_1
 #define RGB_BLUE     GPIO_NUM_2
-#define MODE_LED     GPIO_NUM_9
+#define MODE_LED     GPIO_NUM_19
 #define BUTTON_PIN   GPIO_NUM_5
-#define PHOTO_CHAN   ADC_CHANNEL_3
+#define PHOTO_CHAN   ADC_CHANNEL_4
 
 #define LIGHT   0
 #define TEMP    1
 #define HUM     2
 
+#define SDA_PIN 7
+#define SCL_PIN 6
+#define AM2320_ADDR 0x5C
+#define I2C_PORT I2C_NUM_0
+
+#define HIGH 1
+#define LOW 0
 #define delay(x) vTaskDelay(pdMS_TO_TICKS(x))
 
 adc_oneshot_unit_handle_t adc_handle;
@@ -46,9 +54,9 @@ int LightIntenseColors[6][3] = {
 void set_rgb(int index) {
     if (index < 0 || index > 5)
     {
-        gpio_set_level(RGB_RED, 0);
-        gpio_set_level(RGB_GREEN, 0);
-        gpio_set_level(RGB_BLUE, 0);
+        gpio_set_level(RGB_RED, HIGH);
+        gpio_set_level(RGB_GREEN, HIGH);
+        gpio_set_level(RGB_BLUE, HIGH);
         return;
     }
     gpio_set_level(RGB_RED, StartUpColors[index][0]);
@@ -86,9 +94,9 @@ void startup() {
 
     // 1. MODE_LED flash 3 times (1s on/off)
     for (int i = 0; i < 3; i++) {
-        gpio_set_level(MODE_LED, 1);
+        gpio_set_level(MODE_LED, HIGH);
         delay(1000);
-        gpio_set_level(MODE_LED, 0);
+        gpio_set_level(MODE_LED, LOW);
         delay(1000);
     }
 
@@ -147,6 +155,19 @@ void initGPIO_ADC()
         .atten = ADC_ATTEN_DB_12
     };
     adc_oneshot_config_channel(adc_handle, PHOTO_CHAN, &config);
+
+    // I2C Configuration
+    i2c_config_t i2c_conf = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = SDA_PIN,
+        .scl_io_num = SCL_PIN,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master.clk_speed = 100000,  
+        .clk_flags = 0,
+    };
+    i2c_param_config(I2C_PORT, &i2c_conf);
+    i2c_driver_install(I2C_PORT, i2c_conf.mode, 0, 0, 0);
 }
 
 
@@ -154,7 +175,7 @@ void initGPIO_ADC()
 
 void monitoring()
 {
-    while (1)
+    while (true)
     {
         // Step 1: Check for Mode Switch
         if (gpio_get_level(BUTTON_PIN) == 1)
@@ -173,10 +194,6 @@ void monitoring()
 
         case TEMP:
             tempMode();
-            break;
-
-        case HUM:
-            humMode();
             break;
 
         default:
@@ -208,10 +225,59 @@ void lightMode()
 
 void tempMode()
 {
+ // Step 1: Wake up sensor
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
 
-}
+    i2c_master_write_byte(cmd, (AM2320_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_stop(cmd);
 
-void humMode()
-{
+    i2c_master_cmd_begin(I2C_PORT, cmd, pdMS_TO_TICKS(50));
+    i2c_cmd_link_delete(cmd);
+    
+    delay(10); // Wait for wake-up
 
+    // Step 2: Send read request
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+
+    i2c_master_write_byte(cmd, (AM2320_ADDR << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write_byte(cmd, 0x03, true); // Function code
+    i2c_master_write_byte(cmd, 0x00, true); // Start address
+    i2c_master_write_byte(cmd, 0x04, true); // Number of registers
+    i2c_master_stop(cmd);
+
+    i2c_master_cmd_begin(I2C_PORT, cmd, pdMS_TO_TICKS(50));
+    i2c_cmd_link_delete(cmd);
+
+    delay(2); // Sensor processes request
+
+    // Step 3: Read response (8 bytes)
+    uint8_t data[8];
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+
+    i2c_master_write_byte(cmd, (AM2320_ADDR << 1) | I2C_MASTER_READ, true);
+    i2c_master_read(cmd, data, 8, I2C_MASTER_LAST_NACK);
+    i2c_master_stop(cmd);
+
+    esp_err_t ret = i2c_master_cmd_begin(I2C_PORT, cmd, pdMS_TO_TICKS(50));
+    i2c_cmd_link_delete(cmd);
+
+    if (ret == ESP_OK) {
+      // Parse data: [func_code, byte_count, hum_high, hum_low, temp_high, temp_low, crc_low, crc_high]
+      uint16_t humidity = (data[2] << 8) | data[3];
+      uint16_t temperature = (data[4] << 8) | data[5];
+
+      if (((humidity / 10) < 10) | ((temperature / 10) < 5)) {
+        printf("Sensor calibrating, wait for a bit. \n");
+      }
+      
+      printf("Humidity: %.1f%%, Temperature: %.1f C\n", 
+             humidity / 10.0, temperature / 10.0);
+    } else {
+      printf("Sensor calibrating, wait for a bit: Error code %d\n", ret);
+    }
+
+    delay(2000); // Read every 2 seconds
 }
