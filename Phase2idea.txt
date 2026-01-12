@@ -1,0 +1,10 @@
+Automatic Solar cell adjustment:
+- Servo to tilt solar cell to the brightest angle
+- Potentiometer
+	- Use its button to toggle manual mode and automatic
+	- buttons should be an interrupt, and debounce
+	- Turn potentiometer to manually adjust servo
+- Pointer will be critical for the project
+- In automatic mode servo will go from one end to the other, and find the angle with the brightest light.
+
+- Use of structs to hold angle and brightness. Array of x elements to hold brightness and angle
