@@ -24,13 +24,23 @@ int lower_bound = 0;
 uint8_t current_mode = 0; // 0 for the first button press, so user triggers modeselect. 1: Light Mode, 2: Temp mode 3:Hum mode
 
 // RGB Color Map:
-int colors[6][3] = {
+int StartUpColors[6][3] = {
     {1,0,1},
     {0,0,1},
     {0,1,1},
     {0,1,0},
     {1,1,0},
     {1,0,0}
+};
+
+// RGB Color Map: Red to Green Linear Transition
+int LightIntenseColors[6][3] = {
+    {1, 0, 0}, // Step 1: Full Red
+    {1, 0, 0}, // Step 2: Red
+    {1, 1, 0}, // Step 3: Yellow (Red + Green)
+    {1, 1, 0}, // Step 4: Yellow
+    {0, 1, 0}, // Step 5: Green
+    {0, 1, 0}  // Step 6: Full Green
 };
 
 void set_rgb(int index) {
@@ -41,9 +51,9 @@ void set_rgb(int index) {
         gpio_set_level(RGB_BLUE, 0);
         return;
     }
-    gpio_set_level(RGB_RED, colors[index][0]);
-    gpio_set_level(RGB_GREEN, colors[index][1]);
-    gpio_set_level(RGB_BLUE, colors[index][2]);
+    gpio_set_level(RGB_RED, StartUpColors[index][0]);
+    gpio_set_level(RGB_GREEN, StartUpColors[index][1]);
+    gpio_set_level(RGB_BLUE, StartUpColors[index][2]);
 }
 
 
