@@ -34,15 +34,15 @@ uint8_t lowTemp  = 0;
 uint8_t highTemp = 0;
 uint8_t current_mode = 0; // 0 for the first button press, so user triggers modeselect. 1: Light Mode, 2: Temp mode 3:Hum mode
 
-// Smooth Green → Red interpolation
 int Colors[6][3] = {
-    {0, 255, 0},   // Green
-    {51, 204, 0},
-    {102, 153, 0},
-    {153, 102, 0},
-    {204, 51, 0},
-    {255, 0, 0}    // Red
+    {0, 1, 0}, // Green
+    {0, 1, 1}, // Cyan
+    {1, 1, 0}, // Yellow
+    {1, 1, 1}, // White
+    {1, 0, 1}, // Magenta
+    {1, 0, 0}  // Red
 };
+
 
 void set_rgb(int index) {
     if (index < 0 || index > 5)
