@@ -278,35 +278,35 @@ void tempMode()
     delay(1000);
     uint8_t colorIdx = 0;
 
-    switch (temperature)
+    switch (temperature / 10)
     {
-        case 0:
-        colorIdx = temperature - 23;
+        case 22:
+        colorIdx = temperature - 22;
         set_rgb(colorIdx);
         break;
 
-        case 1:
-        colorIdx = temperature - 24;
+        case 23:
+        colorIdx = temperature - 22;
         set_rgb(colorIdx);
         break;
 
-        case 2:
-        colorIdx = temperature - 25;
+        case 24:
+        colorIdx = temperature - 22;
         set_rgb(colorIdx);
         break;
 
-        case 3:
-        colorIdx = temperature - 26;
+        case 25:
+        colorIdx = temperature - 22;
         set_rgb(colorIdx);
         break;
 
-        case 4:
-        colorIdx = temperature - 27;
+        case 26:
+        colorIdx = temperature - 22;
         set_rgb(colorIdx);
         break;
 
-        case 5:
-        colorIdx = temperature - 28;
+        case 27:
+        colorIdx = temperature - 22;
         set_rgb(colorIdx);
         break;
 
