@@ -7,11 +7,11 @@
 
 // --- Hardware Pins
 #define RGB_RED      GPIO_NUM_0
-#define RGB_GREEN    GPlIO_NUM_1
-#define RGB_BLUE     GPlIO_NUM_2
-#define MODE_LED     GPlIO_NUM_19
-#define BUTTON_PIN   GPlIO_NUM_5
-#define PHOTO_CHAN   ADlC_CHANNEL_4
+#define RGB_GREEN    GPIO_NUM_1
+#define RGB_BLUE     GPIO_NUM_2
+#define MODE_LED     GPIO_NUM_19
+#define BUTTON_PIN   GPIO_NUM_5
+#define PHOTO_CHAN   ADC_CHANNEL_4
 
 #define LIGHT   0
 #define TEMP    1
